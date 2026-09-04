@@ -1,4 +1,5 @@
 import prisma from '@/lib/db';
+import ArticleActions from './article-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +37,7 @@ export default async function ArticlesPage() {
         {/* Table Header */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 120px 120px 80px',
+          gridTemplateColumns: '1fr 100px 120px 90px 220px',
           gap: '1rem',
           padding: '0.875rem 1.5rem',
           borderBottom: '1px solid #1a1a1a',
@@ -50,6 +51,7 @@ export default async function ArticlesPage() {
           <span>Category</span>
           <span>Published</span>
           <span>Status</span>
+          <span>Actions</span>
         </div>
 
         {articles.length === 0 ? (
@@ -60,7 +62,7 @@ export default async function ArticlesPage() {
           articles.map((article, i) => (
             <div key={article.id} style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 120px 120px 80px',
+              gridTemplateColumns: '1fr 100px 120px 90px 220px',
               gap: '1rem',
               padding: '1rem 1.5rem',
               borderBottom: i < articles.length - 1 ? '1px solid #111' : 'none',
@@ -94,6 +96,7 @@ export default async function ArticlesPage() {
               }}>
                 {article.isPublished ? 'Live' : 'Draft'}
               </span>
+              <ArticleActions id={article.id} slug={article.slug} isPublished={article.isPublished} />
             </div>
           ))
         )}

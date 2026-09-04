@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap');
-
 :root {
   /* Light Mode Variables */
   --bg-color: #f4f4f5;
@@ -15,13 +13,25 @@
   --neon-cyan: #00f2fe;
   --neon-magenta: #fe0979;
   
-  --font-base: 'Inter', sans-serif;
+  --font-base: var(--font-inter), 'Inter', sans-serif;
   --layout-max-width: 1400px;
 }
 
+:root[data-theme="dark"] {
+  /* OLED Dark Mode Variables */
+  --bg-color: #000000;
+  --surface-color: #0a0a0a;
+  --surface-hover: #121212;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --border-color: #27272a;
+  --accent-color: #ffffff;
+  --accent-text: #000000;
+}
+
+/* Default to dark when the system prefers it AND no manual theme is set */
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* OLED Dark Mode Variables */
+  :root:not([data-theme="light"]) {
     --bg-color: #000000;
     --surface-color: #0a0a0a;
     --surface-hover: #121212;
@@ -181,6 +191,11 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes ticker {
   0% { transform: translate3d(0, 0, 0); }
   100% { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Micro-animations & Buttons */

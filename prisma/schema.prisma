@@ -32,8 +32,11 @@ model Article {
 model SiteSettings {
   id               String   @id @default("global")
   siteName         String   @default("MyTechNews")
+  siteUrl          String?
   adsenseClientId  String?
+  amazonTag        String?
   geminiApiKey     String?
+  aiModel          String   @default("gemini-3.6-flash")
   autoPublish      Boolean  @default(false)
   updatedAt        DateTime @updatedAt
 }

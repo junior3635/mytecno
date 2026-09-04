@@ -1,15 +1,44 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Inter } from "next/font/google";
+import ThemeToggle from "./theme-toggle";
+import AdSenseAutoAds from "@/components/adsense-auto-ads";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "MyTechNews | Future of Technology",
   description: "Stay ahead of the curve with in-depth tech reviews, breaking news, and comprehensive guides.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  openGraph: {
+    title: "MyTechNews | Future of Technology",
+    description: "Stay ahead of the curve with in-depth tech reviews, breaking news, and comprehensive guides.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MyTechNews | Future of Technology",
+    description: "Stay ahead of the curve with in-depth tech reviews, breaking news, and comprehensive guides.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;}catch(e){}`,
+          }}
+        />
+        <AdSenseAutoAds />
+      </head>
+      <body className={inter.variable}>
         {/* Glassmorphic Sticky Header */}
         <header style={{
           position: 'sticky',
@@ -21,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           borderBottom: '1px solid var(--border-color)',
         }}>
           <div className="container" style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{
                 fontSize: '1.5rem',
                 fontWeight: 900,
@@ -33,11 +62,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               }}>
                 MyTechNews
               </span>
-            </a>
+            </Link>
 
             <nav style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-              {['Reviews', 'Guides', 'Deep Dives', 'Gadgets'].map((item) => (
-                <a key={item} href="/" style={{
+              {[
+                { label: 'Reviews', category: 'Review' },
+                { label: 'Guides', category: 'Guide' },
+                { label: 'Deep Dives', category: 'Deep Dive' },
+                { label: 'Gadgets', category: 'Gadget' },
+              ].map(({ label, category }) => (
+                <Link key={label} href={category ? `/?category=${encodeURIComponent(category)}` : '/'} style={{
                   fontSize: '0.875rem',
                   fontWeight: 600,
                   textTransform: 'uppercase',
@@ -45,10 +79,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   color: 'var(--text-secondary)',
                   transition: 'color 0.2s',
                 }}>
-                  {item}
-                </a>
+                  {label}
+                </Link>
               ))}
-              <a href="/admin" style={{
+              <Link href="/admin" style={{
                 fontSize: '0.85rem',
                 fontWeight: 800,
                 textTransform: 'uppercase',
@@ -60,7 +94,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 transition: 'all 0.2s',
               }}>
                 Admin
-              </a>
+              </Link>
+              <ThemeToggle />
             </nav>
           </div>
         </header>

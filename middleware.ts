@@ -3,9 +3,17 @@ import type { NextRequest } from 'next/server';
 import { getIronSession } from 'iron-session';
 import type { SessionData } from '@/lib/session';
 
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('SESSION_SECRET must be set and at least 32 characters long');
+  }
+  return secret;
+}
+
 const sessionOptions = {
   cookieName: 'mytecno_admin_session',
-  password: process.env.SESSION_SECRET || 'fallback_secret_change_in_production_32ch',
+  password: getSessionSecret(),
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,

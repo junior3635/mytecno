@@ -1,18 +1,38 @@
 import prisma from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
+import Link from 'next/link';
+import Image from 'next/image';
+import DOMPurify from 'isomorphic-dompurify';
+import AdSlot from '@/components/ad-slot';
 
 type Props = {
   params: Promise<{ slug: string }>;
 };
 
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const article = await prisma.article.findUnique({ where: { slug } });
-  if (!article) return {};
+  if (!article || !article.isPublished) return {};
   return {
     title: `${article.seoTitle || article.title} | MyTechNews`,
     description: article.seoDesc || undefined,
+    alternates: { canonical: `/article/${article.slug}` },
+    openGraph: {
+      title: article.seoTitle || article.title,
+      description: article.seoDesc || undefined,
+      type: 'article',
+      url: `/article/${article.slug}`,
+      ...(article.featuredImage ? { images: [{ url: article.featuredImage }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.seoTitle || article.title,
+      description: article.seoDesc || undefined,
+      ...(article.featuredImage ? { images: [article.featuredImage] } : {}),
+    },
   };
 }
 
@@ -96,11 +116,15 @@ export default async function ArticlePage({ params }: Props) {
         {/* Featured Image — full-width below the text hero */}
         {article.featuredImage && (
           <div style={{ maxWidth: '900px', margin: '2.5rem auto 0', padding: '0 1.5rem' }}>
-            <img
+            <Image
               src={article.featuredImage}
               alt={article.title}
+              width={1600}
+              height={840}
+              unoptimized={article.featuredImage.startsWith('data:')}
               style={{
                 width: '100%',
+                height: 'auto',
                 borderRadius: '1rem',
                 display: 'block',
                 boxShadow: '0 0 60px rgba(0,242,254,0.15), 0 0 120px rgba(254,9,121,0.08)',
@@ -109,18 +133,15 @@ export default async function ArticlePage({ params }: Props) {
             />
           </div>
         )}
-      </div>
 
       <div className="container" style={{ paddingTop: article.featuredImage ? '3rem' : '0' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {/* Top Ad Slot */}
-          <div className="ad-slot-tech">
-            [ Google AdSense — In-Article Top ]
-          </div>
+          <AdSlot label="Advertisement" />
 
           {/* Article Body */}
           <div
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
             style={{
               fontSize: '1.125rem',
               lineHeight: 1.85,
@@ -129,20 +150,18 @@ export default async function ArticlePage({ params }: Props) {
           />
 
           {/* Bottom Ad Slot */}
-          <div className="ad-slot-tech">
-            [ Google AdSense — In-Article Bottom ]
-          </div>
+          <AdSlot label="Advertisement" />
 
           {/* Back link */}
           <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
-            <a href="/" style={{
+            <Link href="/" style={{
               fontWeight: 800,
               fontSize: '0.875rem',
               textTransform: 'uppercase',
               letterSpacing: '0.1em',
             }}>
               ← Back to MyTechNews
-            </a>
+            </Link>
           </div>
         </div>
       </div>

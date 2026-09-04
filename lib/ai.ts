@@ -1,28 +1,59 @@
 import { GoogleGenAI } from '@google/genai';
+import prisma from '@/lib/db';
 
-// Initialize the Google Gen AI SDK
-// It automatically picks up GEMINI_API_KEY from environment variables
-const ai = new GoogleGenAI();
+// The API key is resolved at request time: SiteSettings.geminiApiKey wins, env var as fallback.
+async function resolveApiKey(): Promise<string | undefined> {
+  try {
+    const settings = await prisma.siteSettings.findUnique({ where: { id: 'global' } });
+    if (settings?.geminiApiKey) return settings.geminiApiKey;
+  } catch {
+    // DB unavailable — fall back to env var below
+  }
+  return process.env.GEMINI_API_KEY || undefined;
+}
 
-export async function generateTechArticle(topic: string) {
+async function getAi(): Promise<GoogleGenAI> {
+  const apiKey = await resolveApiKey();
+  if (!apiKey) {
+    throw new Error('Gemini API key not configured. Set GEMINI_API_KEY in .env or add it in Settings.');
+  }
+  return new GoogleGenAI({ apiKey });
+}
+
+function classifyError(error: unknown): Error {
+  const message = error instanceof Error ? error.message : 'Unknown error';
+
+  if (/API key not valid|API_KEY_INVALID|invalid api key/i.test(message)) {
+    return new Error('Invalid Gemini API key. Check your key in Settings or .env.');
+  }
+  if (/quota|rate limit|RESOURCE_EXHAUSTED|429/i.test(message)) {
+    return new Error('Gemini rate limit hit. Wait a moment and try again.');
+  }
+  if (/network|fetch failed|ECONNREFUSED|socket hang up|timeout/i.test(message)) {
+    return new Error('Network error while contacting the Gemini API. Try again.');
+  }
+  return new Error(`Gemini API error: ${message}`);
+}
+
+export async function generateTechArticle(topic: string, model = 'gemini-3.6-flash') {
   const prompt = `You are an expert technology journalist. Write a comprehensive, SEO-optimized article about "${topic}".
   The article should be engaging, well-structured, and use HTML formatting (e.g. <h2>, <p>, <strong>, <ul>).
   Do not include the <h1> tag, as the title will be handled separately.
   Return only the HTML content for the body of the article.`;
 
   try {
+    const ai = await getAi();
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model,
       contents: prompt,
     });
     return response.text;
   } catch (error) {
-    console.error('Error generating article content:', error);
-    throw error;
+    throw classifyError(error);
   }
 }
 
-export async function generateArticleMetadata(topic: string, content: string) {
+export async function generateArticleMetadata(topic: string, content: string, model = 'gemini-3.6-flash') {
   const prompt = `Based on the following article content, generate a catchy, click-worthy title (max 60 characters) and a compelling SEO meta description (max 155 characters). 
   Respond in strict JSON format like this: {"title": "The Title", "description": "The description"}.
   
@@ -32,8 +63,9 @@ export async function generateArticleMetadata(topic: string, content: string) {
   ${content.substring(0, 1000)}... (truncated)`;
 
   try {
+    const ai = await getAi();
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model,
       contents: prompt,
     });
 
@@ -56,6 +88,7 @@ export async function generateArticleImage(topic: string, title: string): Promis
   No text, no watermarks, no logos.`;
 
   try {
+    const ai = await getAi();
     const response = await ai.models.generateImages({
       model: 'imagen-3.0-generate-001',
       prompt,

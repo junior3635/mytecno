@@ -16,7 +16,7 @@ const SUGGESTED_TOPICS = [
 export default function GeneratorPage() {
   const [topic, setTopic] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<{ title?: string; slug?: string; error?: string } | null>(null);
+  const [result, setResult] = useState<{ title?: string; slug?: string; isPublished?: boolean; error?: string } | null>(null);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -31,13 +31,13 @@ export default function GeneratorPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setResult({ title: data.article.title, slug: data.article.slug });
+        setResult({ title: data.article.title, slug: data.article.slug, isPublished: data.article.isPublished });
         setTopic('');
       } else {
         setResult({ error: data.error });
       }
-    } catch (err: any) {
-      setResult({ error: err.message });
+    } catch (err: unknown) {
+      setResult({ error: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       setIsGenerating(false);
     }
@@ -146,8 +146,15 @@ export default function GeneratorPage() {
             <p style={{ color: '#fe0979', fontWeight: 600 }}>Error: {result.error}</p>
           ) : (
             <div>
-              <div style={{ fontSize: '0.75rem', color: '#00f2fe', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
-                ✓ Article generated and published
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
+                <span style={{ color: result.isPublished ? '#00f2fe' : '#a1a1aa' }}>
+                  ✓ Article {result.isPublished ? 'generated and published' : 'generated as draft'}
+                </span>
+                {!result.isPublished && (
+                  <span style={{ display: 'inline-block', marginLeft: '0.75rem', padding: '0.15rem 0.6rem', borderRadius: '9999px', backgroundColor: 'rgba(113,113,122,0.15)', color: '#a1a1aa', fontSize: '0.65rem' }}>
+                    Enable Auto-Publish in Settings or publish it from the Articles list.
+                  </span>
+                )}
               </div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem' }}>{result.title}</div>
               <a
