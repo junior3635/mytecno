@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { generateTechArticle, generateArticleMetadata, generateArticleImage } from '@/lib/ai';
+import { generateTechArticle, generateArticleMetadata, generateArticleImage, generateImage } from '@/lib/ai';
 import { saveImageFromDataUrl } from '@/lib/images';
+import { parseArticlePayload, replaceImageSources } from '@/lib/article-content';
 import { log } from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
 import prisma from '@/lib/db';
@@ -34,8 +35,9 @@ export async function POST(req: Request) {
     const settings = await prisma.siteSettings.findUnique({ where: { id: 'global' } });
     const aiModel = settings?.aiModel || 'gemini-3.6-flash';
 
-    // 2. Generate Article Content
-    const content = await generateTechArticle(topic, aiModel) || '';
+    // 2. Generate Article Content + structured image metadata (JSON payload)
+    const contentRaw = await generateTechArticle(topic, aiModel) || '';
+    const { html: content, images: articleImages } = parseArticlePayload(contentRaw);
 
     // 3. Generate Metadata
     const metadata = await generateArticleMetadata(topic, content, aiModel);
@@ -59,16 +61,33 @@ export async function POST(req: Request) {
 
     const slug = await generateUniqueSlug(title);
 
-    // 4. Generate Featured Image and save it to public/uploads (avoids base64 blobs in SQLite)
-    const imageDataUrl = await generateArticleImage(topic, title);
-    const featuredImage = saveImageFromDataUrl(imageDataUrl, slug);
+    // 4. Generate every in-article image from its structured image metadata.
+    //    Each image has a defined section, purpose, and prompt, so the result is
+    //    far more relevant than generating from the topic alone.
+    let finalContent = content;
 
-    // 5. Save to Database (publish only if autoPublish is enabled)
+    if (articleImages.length > 0) {
+      const urls = await Promise.all(
+        articleImages.map(async ({ prompt }, idx) => {
+          const dataUrl = await generateImage(prompt);
+          const suffix = `${slug}-${idx + 1}`;
+          return saveImageFromDataUrl(dataUrl, suffix);
+        })
+      );
+      finalContent = replaceImageSources(finalContent, urls);
+      log('info', 'generate_article', 'In-article images generated', { count: urls.length, slug });
+    }
+
+    // 5. Generate Featured Image and save it to public/uploads (avoids base64 blobs in SQLite)
+    const heroDataUrl = await generateArticleImage(topic, title);
+    const featuredImage = saveImageFromDataUrl(heroDataUrl, slug);
+
+    // 6. Save to Database (publish only if autoPublish is enabled)
     const article = await prisma.article.create({
       data: {
         title,
         slug,
-        content,
+        content: finalContent,
         category: 'Technology',
         seoTitle: title,
         seoDesc: metadata.description || '',
