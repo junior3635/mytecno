@@ -1,6 +1,7 @@
 import prisma from '@/lib/db';
 import Link from 'next/link';
 import type { Article } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import AdSlot from '@/components/ad-slot';
 
 export const revalidate = 3600;
@@ -38,15 +39,26 @@ function ArticleCard({ article }: { article: Article }) {
 }
 
 type HomeProps = {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; q?: string }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
-  const { category } = await searchParams;
+  const { category, q } = await searchParams;
 
-  const where = category && category.trim() !== ''
-    ? { isPublished: true, category: { equals: category.trim(), mode: 'insensitive' } }
-    : { isPublished: true };
+  const where: Prisma.ArticleWhereInput = { isPublished: true };
+
+  if (category && category.trim() !== '') {
+    where.categorySlug = { equals: category.trim() };
+  }
+
+  if (q && q.trim() !== '') {
+    const needle = q.trim();
+    where.OR = [
+      { title: { contains: needle } },
+      { seoDesc: { contains: needle } },
+      { content: { contains: needle } },
+    ];
+  }
 
   const articles = await prisma.article.findMany({
     where,
@@ -82,9 +94,11 @@ export default async function Home({ searchParams }: HomeProps) {
         {/* Section Header */}
         <div style={{ marginBottom: '2.5rem' }}>
           <h3 className="title-section">Latest in Tech</h3>
-          {category && (
+          {(category || q) && (
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-              Showing articles in <strong>{category}</strong>
+              {category && <>Showing articles in <strong>{category}</strong></>}
+              {category && q && ' · '}
+              {q && <>Results for <strong>“{q}”</strong></>}
               {' · '}
               <Link href="/" style={{ color: 'var(--neon-cyan)', fontWeight: 600 }}>Clear filter</Link>
             </p>

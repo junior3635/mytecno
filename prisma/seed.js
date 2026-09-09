@@ -23,6 +23,22 @@ async function main() {
     await prisma.user.create({ data: { email, password: hashed } });
     console.log(`Created admin user: ${email}`);
   }
+
+  const defaultCategories = [
+    { name: 'Technology', slug: 'technology' },
+    { name: 'Reviews', slug: 'reviews' },
+    { name: 'Guides', slug: 'guides' },
+    { name: 'Deep Dives', slug: 'deep-dives' },
+    { name: 'Gadgets', slug: 'gadgets' },
+  ];
+
+  for (const cat of defaultCategories) {
+    const exists = await prisma.category.findUnique({ where: { slug: cat.slug } });
+    if (!exists) {
+      await prisma.category.create({ data: cat });
+      console.log(`Created category: ${cat.name}`);
+    }
+  }
 }
 
 main()

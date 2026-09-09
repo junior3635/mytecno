@@ -6,7 +6,7 @@ export interface SessionData {
   email?: string;
 }
 
-function getSessionSecret(): string {
+export function getSessionSecret(): string {
   const secret = process.env.SESSION_SECRET;
   if (!secret || secret.length < 32) {
     throw new Error('SESSION_SECRET must be set and at least 32 characters long');

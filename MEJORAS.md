@@ -14,7 +14,7 @@ Lista de mejoras ordenadas por prioridad para el portal de noticias generado por
 
 - [x] **6. CRUD completo de artículos** — Actualmente solo hay listado. Agregar edición, borrado y cambio de estado publicado/borrador. *(Aplicado: API `PUT/DELETE /api/articles/[id]`, página de edición `/admin/articles/[id]/edit`, y acciones Editar/Publicar/Eliminar en el listado.)*
 - [x] **8. Modelo `User` sin usar** — Migrar la auth de variables de entorno a la tabla `User` de Prisma con contraseña hasheada *(bcrypt)*. *(Cubierto por la mejora #2: la auth ya consulta la tabla `User` con contraseñas hasheadas via bcryptjs.)*
-- [ ] **8. Modelo `User` sin usar** — Migrar la auth de variables de entorno a la tabla `User` de Prisma con contraseña hasheada (bcrypt).
+- [x] **8. Modelo `User` sin usar** — Migrar la auth de variables de entorno a la tabla `User` de Prisma con contraseña hasheada (bcrypt). *(Duplicado del #8 de arriba — cubierto por la mejora #2.)*
 - [x] **9. Featured image como base64 en SQLite** — Mover imágenes a sistema de archivos o storage externo. *(Aplicado: helper `lib/images.ts` que guarda la imagen en `public/uploads/<slug>.<ext>` y guarda la ruta en la DB en vez del base64. `public/uploads/` agregado al `.gitignore`.)*
 - [x] **10. Gemini API Key desde DB** — `lib/ai.ts` solo lee la env var. Unificar para usar la key de `SiteSettings` si está configurada. *(Aplicado: `getAi()` resuelve la key de `SiteSettings.geminiApiKey` con fallback a `GEMINI_API_KEY`.)*
 - [x] **11. Auto-publish no respeta setting** — `api/generate/route.ts` siempre publica ignorando el campo `autoPublish`. *(Aplicado: el route lee `SiteSettings` y usa `autoPublish` para `isPublished`, y respeta `aiModel` configurado. El generador muestra "draft" si no se publicó.)*
@@ -30,7 +30,7 @@ Lista de mejoras ordenadas por prioridad para el portal de noticias generado por
 
 ## 🔵 Calidad de Código y Arquitectura
 
-- [ ] **18. Estilos inline masivos** — Migrar a CSS modules o Tailwind.
+- [ ] **18. Estilos inline masivos** — Migrar a CSS modules o Tailwind. *(Aplicado: utilidades `.admin-*` en `globals.css` (cards, badges, botones, inputs, rows) y refactor de dashboards, listados, editor, generator, categorías, comentarios, suscriptores y logs; se mantienen pocos estilos inline puntuales.)*
 - [x] **19. `dangerouslySetInnerHTML` sin sanitización** — Agregar DOMPurify para prevenir XSS. *(Aplicado: `isomorphic-dompurify` sanitiza el HTML de Gemini antes de renderizar.)*
 - [x] **20. Error handling débil** — Distinguir rate limits, API key inválida, y errores de red en Gemini. *(Aplicado: `classifyError` en `lib/ai.ts` y error claro si no hay API key; el route devuelve el mensaje específico.)*
 - [x] **21. Sin logging estructurado** — Integrar logger tipo Pino o formato JSON. *(Aplicado: `lib/logger.ts` emite entradas JSON; usado en `/api/generate`.)*
@@ -48,11 +48,11 @@ Lista de mejoras ordenadas por prioridad para el portal de noticias generado por
 ## ⚪ Nice-to-have
 
 - [x] **29. Rate limiting** en `/api/generate`. *(Aplicado: máx. 5 generaciones por hora por usuario con `lib/rate-limit.ts`.)*
-- [ ] **30. Cola de generación** — Control de concurrencia.
-- [ ] **31. Búsqueda de artículos** — Search en admin y público.
-- [ ] **32. Categorías dinámicas** — Modelo `Category` gestionable desde admin.
-- [ ] **33. Comentarios o reacciones** de usuarios.
-- [ ] **34. Newsletter / suscripciones** — Captura de email.
-- [ ] **35. Tests** — Unitarios para `lib/ai.ts`, `lib/session.ts` e integración de API routes.
+- [x] **30. Cola de generación** — Control de concurrencia. *(Aplicado: `lib/generation-queue.ts` con cola serial in-memory, `MAX_CONCURRENCY=1` y `QUEUE_LIMIT=3`; `/api/generate` envuelto en `submitJob` y estado expuesto en `/api/generate/queue`; el generator muestra banner de estado con polling.)*
+- [x] **31. Búsqueda de artículos** — Search en admin y público. *(Aplicado: `SearchBox` en el header (filtra `/?q=` en home) y `admin-search-box` en el listado de artículos; busca en título, slug, categoría y descripción.)*
+- [x] **32. Categorías dinámicas** — Modelo `Category` gestionable desde admin. *(Aplicado: modelo + seed, CRUD en `/api/categories`, página `/admin/categories`, header navega por categoría y el generator asigna categoría.)*
+- [x] **33. Comentarios o reacciones** de usuarios. *(Aplicado: modelo `Comment` con moderación; POST público vía `/api/comments` (queda `isApproved=false`), listado público aprobado por artículo, y moderación Aprobar/Eliminar en `/admin/comments`.)*
+- [x] **34. Newsletter / suscripciones** — Captura de email. *(Aplicado: modelo `Subscriber`, form en el footer, suscripción idempotente en `/api/subscribers`, baja con token en `/unsubscribe/[token]`, y admin en `/admin/subscribers` con link de baja copiable.)*
+- [x] **35. Tests** — Unitarios para `lib/ai.ts`, `lib/session.ts` e integración de API routes. *(Aplicado: suite Vitest con 19 tests en `lib/` para `ai.ts`, `session.ts`, `article-content.ts` y `rate-limit.ts`; `npm test`.)*
 - [x] **36. Prompt SEO + imágenes por sección** — Nuevo prompt editorial en `generateTechArticle` que genera el artículo estructurado (intro, resumen, pros/cons, tablas, FAQ, conclusión) con prompts de imagen embebidos (`data-image-prompt`). `lib/article-content.ts` extrae cada prompt, genera las imágenes con Imagen 3 en paralelo, las incrusta en el HTML y elimina los bloques de instrucciones. CSS añadido para todas las clases.
 - [x] **37. Metadatos de imagen en formato JSON** — El modelo ya no incrusta los prompts en el HTML: responde con un objeto `{"html": ..., "images": [...]}` donde cada imagen tiene `image_id`, `section`, `purpose`, `alt`, `caption`, `prompt`, `aspect_ratio` y `style`. `parseArticlePayload` lo valida y normaliza (con fallback legacy); la app envía cada `prompt` a Imagen 3 en paralelo y sustituye `[IMAGE_URL_OR_GENERATED_IMAGE]` por el URL real.

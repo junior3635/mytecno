@@ -70,7 +70,7 @@ function tryParsePayload(text: string): ArticlePayload | null {
     const images = Array.isArray(parsed.images)
       ? parsed.images
           .filter(
-            (img: unknown): img is ImageMeta => !!img && typeof img === 'object' && typeof (img as ImageMeta).prompt === 'string' && (img as ImageMeta).prompt.length > 0
+            (img: unknown): img is ImageMeta => !!img && typeof img === 'object' && typeof (img as ImageMeta).prompt === 'string' && (img as ImageMeta).prompt.trim().length > 0
           )
           .map((img: ImageMeta) => ({
             image_id: typeof img.image_id === 'string' && img.image_id ? img.image_id : 'image-0',

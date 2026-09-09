@@ -37,49 +37,23 @@ export default function ArticleActions({ id, slug, isPublished }: { id: string; 
     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
       <Link
         href={`/admin/articles/${id}/edit`}
-        style={{
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          padding: '0.3rem 0.7rem',
-          borderRadius: '9999px',
-          backgroundColor: 'rgba(0,242,254,0.08)',
-          color: '#00f2fe',
-          whiteSpace: 'nowrap',
-        }}
+        className="admin-btn admin-btn-cyan"
       >
         Edit
       </Link>
       <button
         onClick={togglePublish}
         disabled={busy}
-        style={{
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          padding: '0.3rem 0.7rem',
-          borderRadius: '9999px',
-          backgroundColor: 'rgba(113,113,122,0.08)',
-          color: '#a1a1aa',
-          border: 'none',
-          cursor: busy ? 'not-allowed' : 'pointer',
-          whiteSpace: 'nowrap',
-        }}
+        className="admin-btn admin-btn-grey"
+        style={{ cursor: busy ? 'not-allowed' : 'pointer' }}
       >
         {isPublished ? 'Unpublish' : 'Publish'}
       </button>
       <button
         onClick={deleteArticle}
         disabled={busy}
-        style={{
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          padding: '0.3rem 0.7rem',
-          borderRadius: '9999px',
-          backgroundColor: 'rgba(254,9,121,0.08)',
-          color: '#fe0979',
-          border: 'none',
-          cursor: busy ? 'not-allowed' : 'pointer',
-          whiteSpace: 'nowrap',
-        }}
+        className="admin-btn admin-btn-red"
+        style={{ cursor: busy ? 'not-allowed' : 'pointer' }}
       >
         Delete
       </button>

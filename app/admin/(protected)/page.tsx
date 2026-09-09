@@ -5,13 +5,8 @@ export const dynamic = 'force-dynamic';
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div style={{
-      backgroundColor: '#0a0a0a',
-      border: '1px solid #1a1a1a',
-      borderRadius: '1rem',
-      padding: '1.5rem',
-    }}>
-      <div style={{ fontSize: '0.75rem', color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.75rem' }}>
+    <div className="admin-card" style={{ padding: '1.5rem' }}>
+      <div className="admin-row-label" style={{ marginBottom: '0.75rem' }}>
         {label}
       </div>
       <div style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>
@@ -19,6 +14,14 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
       </div>
       {sub && <div style={{ fontSize: '0.8rem', color: '#71717a', marginTop: '0.5rem' }}>{sub}</div>}
     </div>
+  );
+}
+
+function PanelTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="admin-row-label" style={{ color: '#a1a1aa' }}>
+      {children}
+    </h2>
   );
 }
 
@@ -36,14 +39,10 @@ export default async function AdminDashboard() {
   });
 
   return (
-    <div style={{ padding: '2.5rem', maxWidth: '1000px' }}>
+    <div className="admin-page" style={{ maxWidth: '1000px' }}>
       <div style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '0.25rem' }}>
-          Dashboard
-        </h1>
-        <p style={{ color: '#71717a', fontSize: '0.9rem' }}>
-          Overview of your automated tech portal
-        </p>
+        <h1 className="admin-heading">Dashboard</h1>
+        <p className="admin-sub">Overview of your automated tech portal</p>
       </div>
 
       {/* Stats Grid */}
@@ -55,11 +54,9 @@ export default async function AdminDashboard() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         {/* Recent Articles */}
-        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '1rem', padding: '1.5rem' }}>
+        <div className="admin-card" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#a1a1aa' }}>
-              Recent Articles
-            </h2>
+            <PanelTitle>Recent Articles</PanelTitle>
             <Link href="/admin/articles" style={{ fontSize: '0.75rem', color: '#00f2fe' }}>View all →</Link>
           </div>
           {recentArticles.length === 0 ? (
@@ -76,16 +73,7 @@ export default async function AdminDashboard() {
                       {new Date(a.createdAt).toLocaleDateString()}
                     </div>
                   </div>
-                  <span style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    padding: '0.2rem 0.6rem',
-                    borderRadius: '9999px',
-                    backgroundColor: a.isPublished ? 'rgba(0,242,254,0.1)' : 'rgba(113,113,122,0.1)',
-                    color: a.isPublished ? '#00f2fe' : '#71717a',
-                    flexShrink: 0,
-                    marginLeft: '0.75rem',
-                  }}>
+                  <span className={`admin-badge ${a.isPublished ? 'admin-badge-live' : 'admin-badge-draft'}`} style={{ flexShrink: 0, marginLeft: '0.75rem' }}>
                     {a.isPublished ? 'Live' : 'Draft'}
                   </span>
                 </div>
@@ -95,11 +83,9 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Recent Logs */}
-        <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '1rem', padding: '1.5rem' }}>
+        <div className="admin-card" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#a1a1aa' }}>
-              Activity Log
-            </h2>
+            <PanelTitle>Activity Log</PanelTitle>
             <Link href="/admin/logs" style={{ fontSize: '0.75rem', color: '#00f2fe' }}>View all →</Link>
           </div>
           {recentLogs.length === 0 ? (
@@ -128,32 +114,10 @@ export default async function AdminDashboard() {
 
       {/* Quick Actions */}
       <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-        <Link href="/admin/generator" style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.875rem 1.5rem',
-          background: 'linear-gradient(90deg, #00f2fe, #fe0979)',
-          borderRadius: '0.75rem',
-          fontWeight: 800,
-          fontSize: '0.875rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          color: '#fff',
-        }}>
+        <Link href="/admin/generator" className="admin-primary-btn">
           ✦ Generate New Article
         </Link>
-        <Link href="/" target="_blank" style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.875rem 1.5rem',
-          border: '1px solid #27272a',
-          borderRadius: '0.75rem',
-          fontWeight: 600,
-          fontSize: '0.875rem',
-          color: '#a1a1aa',
-        }}>
+        <Link href="/" target="_blank" className="admin-ghost-btn" style={{ display: 'inline-flex', alignItems: 'center', fontWeight: 600, color: '#a1a1aa' }}>
           View Live Site →
         </Link>
       </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/db';
+import type { Prisma } from '@prisma/client';
 import { getSession } from '@/lib/session';
 
 type Params = { params: Promise<{ id: string }> };
@@ -26,17 +27,38 @@ export async function PUT(req: Request, { params }: Params) {
     }
   }
 
+  const data: Prisma.ArticleUpdateInput = {
+    ...(typeof body.title === 'string' && body.title.trim() && { title: body.title.trim() }),
+    ...(slug && { slug }),
+    ...(typeof body.content === 'string' && { content: body.content }),
+    ...(typeof body.seoTitle === 'string' && { seoTitle: body.seoTitle }),
+    ...(typeof body.seoDesc === 'string' && { seoDesc: body.seoDesc }),
+    ...(typeof body.isPublished === 'boolean' && { isPublished: body.isPublished }),
+    ...(typeof body.featuredImage === 'string' && { featuredImage: body.featuredImage.trim() || null }),
+  };
+
+  if (typeof body.category === 'string' && body.category.trim()) {
+    data.category = body.category.trim();
+  }
+
+  // Dynamic categories: the admin sends a category slug; resolve name + FK together.
+  if (typeof body.categorySlug === 'string') {
+    if (body.categorySlug.trim() === '') {
+      data.categoryRef = { disconnect: true };
+    } else {
+      const cat = await prisma.category.findUnique({ where: { slug: body.categorySlug } });
+      if (cat) {
+        data.category = cat.name;
+        data.categoryRef = { connect: { slug: cat.slug } };
+      } else {
+        data.categoryRef = { disconnect: true };
+      }
+    }
+  }
+
   const article = await prisma.article.update({
     where: { id },
-    data: {
-      ...(typeof body.title === 'string' && body.title.trim() && { title: body.title.trim() }),
-      ...(slug && { slug }),
-      ...(typeof body.content === 'string' && { content: body.content }),
-      ...(typeof body.category === 'string' && body.category.trim() && { category: body.category.trim() }),
-      ...(typeof body.seoTitle === 'string' && { seoTitle: body.seoTitle }),
-      ...(typeof body.seoDesc === 'string' && { seoDesc: body.seoDesc }),
-      ...(typeof body.isPublished === 'boolean' && { isPublished: body.isPublished }),
-    },
+    data,
   });
 
   revalidatePath('/');

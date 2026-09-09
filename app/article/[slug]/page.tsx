@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import DOMPurify from 'isomorphic-dompurify';
 import AdSlot from '@/components/ad-slot';
+import CommentSection from '@/components/comment-section';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -151,6 +152,9 @@ export default async function ArticlePage({ params }: Props) {
 
           {/* Bottom Ad Slot */}
           <AdSlot label="Advertisement" />
+
+          {/* Comments */}
+          <CommentSection articleId={article.id} />
 
           {/* Back link */}
           <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>

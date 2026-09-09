@@ -450,3 +450,140 @@ h1, h2, h3, h4, h5, h6 {
   padding: 1.5rem 2rem;
   margin: 2.5rem 0;
 }
+
+/* ===================== */
+/* Admin UI Utilities    */
+/* ===================== */
+
+.admin-page {
+  padding: 2.5rem;
+}
+
+.admin-heading {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.admin-sub {
+  color: #71717a;
+  font-size: 0.9rem;
+}
+
+.admin-card {
+  background-color: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 1rem;
+}
+
+.admin-row-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #52525b;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.admin-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.admin-badge-live {
+  background-color: rgba(0, 242, 254, 0.1);
+  color: #00f2fe;
+}
+
+.admin-badge-draft {
+  background-color: rgba(113, 113, 122, 0.1);
+  color: #71717a;
+}
+
+.admin-btn {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.admin-btn-cyan {
+  background-color: rgba(0, 242, 254, 0.08);
+  color: #00f2fe;
+}
+
+.admin-btn-red {
+  background-color: rgba(254, 9, 121, 0.08);
+  color: #fe0979;
+}
+
+.admin-btn-grey {
+  background-color: rgba(113, 113, 122, 0.08);
+  color: #a1a1aa;
+}
+
+.admin-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #111;
+  border: 1px solid #27272a;
+  border-radius: 0.75rem;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.admin-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #a1a1aa;
+  margin-bottom: 0.5rem;
+}
+
+.admin-primary-btn {
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(90deg, #00f2fe, #fe0979);
+  border: none;
+  border-radius: 0.75rem;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-primary-btn:disabled {
+  background: #27272a;
+  cursor: not-allowed;
+}
+
+.admin-ghost-btn {
+  padding: 0.65rem 1rem;
+  background-color: transparent;
+  border: 1px solid #27272a;
+  border-radius: 0.75rem;
+  color: #a1a1aa;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import type { ProviderId } from '@/lib/ai/types';
+import { AI_PROVIDERS, PROVIDER_DEFAULT_ENV_KEY, PROVIDER_DEFAULT_TEXT_MODELS, PROVIDER_MODELS } from '@/lib/ai/models';
 
 type Settings = {
   siteName?: string | null;
@@ -8,8 +10,17 @@ type Settings = {
   adsenseClientId?: string | null;
   amazonTag?: string | null;
   geminiApiKey?: string | null;
+  anthropicApiKey?: string | null;
+  openaiApiKey?: string | null;
+  aiProvider?: string | null;
   aiModel?: string | null;
   autoPublish?: boolean | null;
+};
+
+const KEY_FIELDS: Record<ProviderId, keyof Settings> = {
+  gemini: 'geminiApiKey',
+  anthropic: 'anthropicApiKey',
+  openai: 'openaiApiKey',
 };
 
 function SettingRow({ label, description, children }: { label: string; description: string; children: React.ReactNode }) {
@@ -31,6 +42,17 @@ function SettingRow({ label, description, children }: { label: string; descripti
   );
 }
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="admin-card" style={{ padding: '0 2rem', marginBottom: '2rem' }}>
+      <h2 className="admin-row-label" style={{ padding: '1.5rem 0 0', letterSpacing: '0.15em' }}>
+        {title}
+      </h2>
+      {children}
+    </div>
+  );
+}
+
 function Input({ name, value, placeholder, type = 'text', onChange }: { name: string; value?: string | null; placeholder?: string; type?: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
   return (
     <input
@@ -39,16 +61,7 @@ function Input({ name, value, placeholder, type = 'text', onChange }: { name: st
       value={value || ''}
       placeholder={placeholder}
       onChange={onChange}
-      style={{
-        width: '100%',
-        padding: '0.75rem 1rem',
-        backgroundColor: '#111',
-        border: '1px solid #27272a',
-        borderRadius: '0.75rem',
-        color: '#fff',
-        fontSize: '0.9rem',
-        outline: 'none',
-      }}
+      className="admin-input"
     />
   );
 }
@@ -60,14 +73,32 @@ export default function SettingsForm({ settings }: { settings: Settings | null }
     adsenseClientId: settings?.adsenseClientId ?? '',
     amazonTag: settings?.amazonTag ?? '',
     geminiApiKey: settings?.geminiApiKey ?? '',
+    anthropicApiKey: settings?.anthropicApiKey ?? '',
+    openaiApiKey: settings?.openaiApiKey ?? '',
+    aiProvider: settings?.aiProvider ?? 'gemini',
     aiModel: settings?.aiModel ?? 'gemini-3.6-flash',
     autoPublish: settings?.autoPublish ?? false,
   });
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle');
 
+  const providerId = (form.aiProvider === 'anthropic' || form.aiProvider === 'openai' ? form.aiProvider : 'gemini') as ProviderId;
+  const providerMeta = AI_PROVIDERS.find((p) => p.id === providerId);
+  const textModels = PROVIDER_MODELS[providerId].filter((m) => m.kind === 'text');
+  const keyField = KEY_FIELDS[providerId];
+
   function set<K extends keyof Settings>(key: K, value: Settings[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function handleProviderChange(id: string) {
+    const next = id as ProviderId;
+    set('aiProvider', next);
+    // If the saved model doesn't belong to the new provider, reset to its default text model.
+    const modelsFor = PROVIDER_MODELS[next].filter((m) => m.kind === 'text');
+    if (!modelsFor.some((m) => m.id === form.aiModel)) {
+      set('aiModel', PROVIDER_DEFAULT_TEXT_MODELS[next]);
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -95,23 +126,17 @@ export default function SettingsForm({ settings }: { settings: Settings | null }
   return (
     <form onSubmit={handleSave}>
       {/* Site Configuration */}
-      <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '1rem', padding: '0 2rem', marginBottom: '2rem' }}>
-        <h2 style={{ padding: '1.5rem 0 0', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#52525b' }}>
-          Site Configuration
-        </h2>
+      <Section title="Site Configuration">
         <SettingRow label="Site Name" description="The public name of your tech portal.">
           <Input name="siteName" value={form.siteName} placeholder="My Site" onChange={(e) => set('siteName', e.target.value)} />
         </SettingRow>
         <SettingRow label="Site URL" description="Your canonical domain (used for SEO and sitemaps).">
           <Input name="siteUrl" value={form.siteUrl} placeholder="https://mytechnews.com" onChange={(e) => set('siteUrl', e.target.value)} />
         </SettingRow>
-      </div>
+      </Section>
 
       {/* Monetization */}
-      <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '1rem', padding: '0 2rem', marginBottom: '2rem' }}>
-        <h2 style={{ padding: '1.5rem 0 0', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#52525b' }}>
-          Monetization
-        </h2>
+      <Section title="Monetization">
         <SettingRow
           label="Google AdSense Client ID"
           description="Your ca-pub-XXXX ID from your AdSense account."
@@ -124,32 +149,61 @@ export default function SettingsForm({ settings }: { settings: Settings | null }
         >
           <Input name="amazonTag" value={form.amazonTag} placeholder="yoursite-20" onChange={(e) => set('amazonTag', e.target.value)} />
         </SettingRow>
-      </div>
+      </Section>
 
       {/* AI Engine */}
-      <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '1rem', padding: '0 2rem', marginBottom: '2rem' }}>
-        <h2 style={{ padding: '1.5rem 0 0', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#52525b' }}>
-          AI Content Engine
-        </h2>
+      <Section title="AI Content Engine">
         <SettingRow
-          label="Gemini API Key"
-          description="Your Google Gemini API key. Get one at aistudio.google.com."
+          label="Provider"
+          description="The AI engine used to write articles and generate images."
         >
-          <Input name="geminiApiKey" type="password" value={form.geminiApiKey} placeholder="•••••••••••••••••••••" onChange={(e) => set('geminiApiKey', e.target.value)} />
+          <select
+            name="aiProvider"
+            value={providerId}
+            onChange={(e) => handleProviderChange(e.target.value)}
+            className="admin-input"
+          >
+            {AI_PROVIDERS.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
         </SettingRow>
         <SettingRow
-          label="AI Model"
-          description="The Gemini model used for content generation."
+          label={`${providerMeta?.label ?? 'Provider'} API Key`}
+          description={`Paste your API key. Fallback: ${PROVIDER_DEFAULT_ENV_KEY[providerId]} in .env.`}
+        >
+          <Input
+            name={keyField}
+            type="password"
+            value={(form[keyField] as string | null | undefined) ?? ''}
+            placeholder="•••••••••••••••••••••"
+            onChange={(e) => set(keyField, e.target.value)}
+          />
+        </SettingRow>
+        <SettingRow
+          label="Model"
+          description="The model used for content generation."
         >
           <select
             name="aiModel"
             value={form.aiModel ?? ''}
             onChange={(e) => set('aiModel', e.target.value)}
-            style={{ width: '100%', padding: '0.75rem 1rem', backgroundColor: '#111', border: '1px solid #27272a', borderRadius: '0.75rem', color: '#fff', fontSize: '0.9rem' }}
+            className="admin-input"
           >
-            <option value="gemini-3.6-flash">gemini-3.6-flash (fast)</option>
-            <option value="gemini-2.5-pro">gemini-2.5-pro (quality)</option>
+            {textModels.map((m) => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
           </select>
+        </SettingRow>
+        <SettingRow
+          label="Image Generation"
+          description={providerMeta?.description ?? ''}
+        >
+          <span style={{ fontSize: '0.8rem', color: '#71717a' }}>
+            {PROVIDER_MODELS[providerId].some((m) => m.kind === 'image')
+              ? 'Enabled automatically with the provider above.'
+              : 'Not available for this provider — articles use a styled placeholder instead.'}
+          </span>
         </SettingRow>
         <SettingRow
           label="Auto-Publish"
@@ -165,7 +219,7 @@ export default function SettingsForm({ settings }: { settings: Settings | null }
             <span style={{ fontSize: '0.9rem', color: '#a1a1aa' }}>Enabled</span>
           </label>
         </SettingRow>
-      </div>
+      </Section>
 
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <button

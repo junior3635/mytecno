@@ -15,18 +15,53 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  articles  Article[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Article {
   id           String   @id @default(cuid())
   title        String
   slug         String   @unique
   content      String   // HTML
-  category     String
+  category     String       @default("Technology")
+  categorySlug String?
+  categoryRef  Category?    @relation(fields: [categorySlug], references: [slug])
   seoTitle     String?
   seoDesc      String?
   featuredImage String? // base64 data URL from Imagen 3
   isPublished  Boolean  @default(false)
+  comments     Comment[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  name      String
+  email     String?
+  body      String
+  isApproved Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([articleId])
+}
+
+model Subscriber {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  token     String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model SiteSettings {
@@ -36,6 +71,9 @@ model SiteSettings {
   adsenseClientId  String?
   amazonTag        String?
   geminiApiKey     String?
+  anthropicApiKey  String?
+  openaiApiKey     String?
+  aiProvider       String   @default("gemini")
   aiModel          String   @default("gemini-3.6-flash")
   autoPublish      Boolean  @default(false)
   updatedAt        DateTime @updatedAt

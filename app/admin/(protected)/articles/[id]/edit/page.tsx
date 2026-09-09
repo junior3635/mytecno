@@ -38,9 +38,11 @@ export default async function EditArticlePage({ params }: Props) {
         title: article.title,
         slug: article.slug,
         category: article.category,
+        categorySlug: article.categorySlug || null,
         content: article.content,
         seoTitle: article.seoTitle || '',
         seoDesc: article.seoDesc || '',
+        featuredImage: article.featuredImage || '',
         isPublished: article.isPublished,
       }} />
     </div>

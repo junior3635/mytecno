@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Inter } from "next/font/google";
-import ThemeToggle from "./theme-toggle";
+import Header from "./header";
 import AdSenseAutoAds from "@/components/adsense-auto-ads";
+import SubscribeForm from "@/components/subscribe-form";
 import "./globals.css";
 
 const inter = Inter({
@@ -39,66 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AdSenseAutoAds />
       </head>
       <body className={inter.variable}>
-        {/* Glassmorphic Sticky Header */}
-        <header style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          backgroundColor: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderBottom: '1px solid var(--border-color)',
-        }}>
-          <div className="container" style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{
-                fontSize: '1.5rem',
-                fontWeight: 900,
-                letterSpacing: '-0.05em',
-                textTransform: 'uppercase',
-                background: 'linear-gradient(90deg, #fff 30%, #00f2fe)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}>
-                MyTechNews
-              </span>
-            </Link>
-
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-              {[
-                { label: 'Reviews', category: 'Review' },
-                { label: 'Guides', category: 'Guide' },
-                { label: 'Deep Dives', category: 'Deep Dive' },
-                { label: 'Gadgets', category: 'Gadget' },
-              ].map(({ label, category }) => (
-                <Link key={label} href={category ? `/?category=${encodeURIComponent(category)}` : '/'} style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: 'var(--text-secondary)',
-                  transition: 'color 0.2s',
-                }}>
-                  {label}
-                </Link>
-              ))}
-              <Link href="/admin" style={{
-                fontSize: '0.85rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                padding: '0.4rem 1.2rem',
-                borderRadius: '9999px',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-primary)',
-                transition: 'all 0.2s',
-              }}>
-                Admin
-              </Link>
-              <ThemeToggle />
-            </nav>
-          </div>
-        </header>
+        <Header />
 
         <main style={{ minHeight: '85vh' }}>
           {children}
@@ -110,13 +51,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           marginTop: '4rem',
           backgroundColor: 'var(--surface-color)',
         }}>
-          <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <span style={{ fontWeight: 900, fontSize: '1.25rem', letterSpacing: '-0.04em', textTransform: 'uppercase' }}>
-              MyTechNews
-            </span>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-              &copy; {new Date().getFullYear()} MyTechNews · AI-Powered Technology Media
-            </p>
+          <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <span style={{ fontWeight: 900, fontSize: '1.25rem', letterSpacing: '-0.04em', textTransform: 'uppercase' }}>
+                MyTechNews
+              </span>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                &copy; {new Date().getFullYear()} MyTechNews · AI-Powered Technology Media
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '340px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Get the weekly brief
+              </span>
+              <SubscribeForm />
+            </div>
           </div>
         </footer>
       </body>

@@ -1,51 +1,62 @@
 import prisma from '@/lib/db';
+import type { Prisma } from '@prisma/client';
 import ArticleActions from './article-actions';
+import AdminSearchBox from './admin-search-box';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ArticlesPage() {
+export default async function ArticlesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+
+  const where: Prisma.ArticleWhereInput = {};
+  if (q && q.trim() !== '') {
+    const needle = q.trim();
+    where.OR = [
+      { title: { contains: needle } },
+      { slug: { contains: needle } },
+      { category: { contains: needle } },
+      { seoDesc: { contains: needle } },
+    ];
+  }
+
   const articles = await prisma.article.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
   });
 
+  function StatusBadge({ isPublished }: { isPublished: boolean }) {
+    return (
+      <span className={`admin-badge ${isPublished ? 'admin-badge-live' : 'admin-badge-draft'}`} style={{ textAlign: 'center' }}>
+        {isPublished ? 'Live' : 'Draft'}
+      </span>
+    );
+  }
+
   return (
-    <div style={{ padding: '2.5rem' }}>
-      <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <div className="admin-page">
+      <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '0.25rem' }}>
-            Articles
-          </h1>
-          <p style={{ color: '#71717a', fontSize: '0.9rem' }}>
-            {articles.length} total articles in the database
+          <h1 className="admin-heading">Articles</h1>
+          <p className="admin-sub">
+            {articles.length} total articles in the database{q ? ` matching “${q}”` : ''}
           </p>
         </div>
-        <a href="/admin/generator" style={{
-          padding: '0.75rem 1.5rem',
-          background: 'linear-gradient(90deg, #00f2fe, #fe0979)',
-          borderRadius: '0.75rem',
-          fontWeight: 800,
-          fontSize: '0.8rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          color: '#fff',
-        }}>
-          ✦ New Article
-        </a>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <AdminSearchBox placeholder="Search articles…" />
+          <a href="/admin/generator" className="admin-primary-btn" style={{ padding: '0.75rem 1.5rem', fontSize: '0.8rem' }}>
+            ✦ New Article
+          </a>
+        </div>
       </div>
 
-      <div style={{ backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '1rem', overflow: 'hidden' }}>
+      <div className="admin-card" style={{ overflow: 'hidden' }}>
         {/* Table Header */}
-        <div style={{
+        <div className="admin-row-label" style={{
           display: 'grid',
           gridTemplateColumns: '1fr 100px 120px 90px 220px',
           gap: '1rem',
           padding: '0.875rem 1.5rem',
           borderBottom: '1px solid #1a1a1a',
-          fontSize: '0.7rem',
-          fontWeight: 700,
-          color: '#52525b',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
         }}>
           <span>Title</span>
           <span>Category</span>
@@ -85,17 +96,7 @@ export default async function ArticlesPage() {
               <span style={{ fontSize: '0.8rem', color: '#71717a' }}>
                 {new Date(article.createdAt).toLocaleDateString()}
               </span>
-              <span style={{
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                padding: '0.25rem 0.6rem',
-                borderRadius: '9999px',
-                backgroundColor: article.isPublished ? 'rgba(0,242,254,0.1)' : 'rgba(113,113,122,0.1)',
-                color: article.isPublished ? '#00f2fe' : '#71717a',
-                textAlign: 'center',
-              }}>
-                {article.isPublished ? 'Live' : 'Draft'}
-              </span>
+              <StatusBadge isPublished={article.isPublished} />
               <ArticleActions id={article.id} slug={article.slug} isPublished={article.isPublished} />
             </div>
           ))

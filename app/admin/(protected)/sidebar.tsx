@@ -6,6 +6,9 @@ import { useState } from 'react';
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: '⬡' },
   { href: '/admin/articles', label: 'Articles', icon: '◈' },
+  { href: '/admin/categories', label: 'Categories', icon: '▤' },
+  { href: '/admin/comments', label: 'Comments', icon: '◎' },
+  { href: '/admin/subscribers', label: 'Subscribers', icon: '✉' },
   { href: '/admin/generator', label: 'AI Generator', icon: '✦' },
   { href: '/admin/logs', label: 'Logs', icon: '≡' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙' },

@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "db:seed": "node --env-file=.env prisma/seed.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.124.0",
     "@google/genai": "^2.21.0",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
@@ -17,6 +19,7 @@
     "isomorphic-dompurify": "^4.1.0",
     "marked": "^18.0.11",
     "next": "16.3.4",
+    "openai": "7.12.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -29,6 +32,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "prisma": "^6.19.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "8.2.2",
+    "vitest": "^5.0.0"
   }
 }
