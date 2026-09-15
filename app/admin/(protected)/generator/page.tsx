@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import type { ProviderId } from '@/lib/ai/types';
 import { AI_PROVIDERS } from '@/lib/ai/models';
 import PromptPreview from './prompt-preview';
+import ArticlePreview from '@/components/article-preview';
+import type { PreviewArticle } from '@/components/article-preview';
 
 const SUGGESTED_TOPICS = [
   'NVIDIA Blackwell B200X GPU Review',
@@ -23,10 +25,11 @@ export default function GeneratorPage() {
   const [categorySlug, setCategorySlug] = useState('');
   const [categories, setCategories] = useState<{ slug: string; name: string }[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<{ title?: string; slug?: string; isPublished?: boolean; error?: string } | null>(null);
+  const [result, setResult] = useState<{ id?: string; title?: string; slug?: string; isPublished?: boolean; error?: string; preview?: PreviewArticle } | null>(null);
   const [queue, setQueue] = useState<QueueState | null>(null);
   const [engine, setEngine] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [articlePreviewOpen, setArticlePreviewOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -79,7 +82,13 @@ export default function GeneratorPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setResult({ title: data.article.title, slug: data.article.slug, isPublished: data.article.isPublished });
+        setResult({
+          id: data.article.id,
+          title: data.article.title,
+          slug: data.article.slug,
+          isPublished: data.article.isPublished,
+          preview: data.article,
+        });
         setTopic('');
       } else {
         setResult({ error: data.error });
@@ -248,18 +257,51 @@ export default function GeneratorPage() {
                 )}
               </div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem' }}>{result.title}</div>
-              <a
-                href={`/article/${result.slug}`}
-                target="_blank"
-                style={{
-                  fontSize: '0.875rem',
-                  color: '#00f2fe',
-                  textDecoration: 'underline',
-                  fontWeight: 600,
-                }}
-              >
-                View article →
-              </a>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem' }}>
+                {result.preview && (
+                  <button
+                    type="button"
+                    onClick={() => setArticlePreviewOpen(true)}
+                    style={{
+                      fontSize: '0.875rem',
+                      color: '#00f2fe',
+                      background: 'transparent',
+                      border: 'none',
+                      padding: 0,
+                      textDecoration: 'underline',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Preview
+                  </button>
+                )}
+                <a
+                  href={`/article/${result.slug}`}
+                  target="_blank"
+                  style={{
+                    fontSize: '0.875rem',
+                    color: '#00f2fe',
+                    textDecoration: 'underline',
+                    fontWeight: 600,
+                  }}
+                >
+                  View article →
+                </a>
+                {!result.isPublished && (
+                  <a
+                    href={`/admin/articles/${result.id}/edit`}
+                    style={{
+                      fontSize: '0.875rem',
+                      color: '#a1a1aa',
+                      textDecoration: 'underline',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Open in editor →
+                  </a>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -267,6 +309,10 @@ export default function GeneratorPage() {
 
       {previewOpen && (
         <PromptPreview topic={topic} engine={engine} onClose={() => setPreviewOpen(false)} />
+      )}
+
+      {articlePreviewOpen && result?.preview && (
+        <ArticlePreview article={result.preview} onClose={() => setArticlePreviewOpen(false)} />
       )}
     </div>
   );

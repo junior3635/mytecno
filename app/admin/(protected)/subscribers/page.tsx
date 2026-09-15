@@ -13,11 +13,21 @@ export default async function SubscribersPage() {
 
   return (
     <div className="admin-page" style={{ maxWidth: '900px' }}>
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h1 className="admin-heading">Subscribers</h1>
-        <p className="admin-sub">
-          {activeCount} active of {subscribers.length} total. Emails captured via the footer newsletter form.
-        </p>
+      <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '1rem' }}>
+        <div>
+          <h1 className="admin-heading">Subscribers</h1>
+          <p className="admin-sub">
+            {activeCount} active of {subscribers.length} total. Emails captured via the footer newsletter form.
+          </p>
+        </div>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- download link, not a page nav */}
+        <a
+          href="/api/admin/subscribers/export"
+          className="admin-ghost-btn"
+          style={{ display: 'inline-flex', alignItems: 'center', fontWeight: 600, color: '#a1a1aa', textDecoration: 'none' }}
+        >
+          Export CSV
+        </a>
       </div>
 
       <div className="admin-card" style={{ overflow: 'hidden' }}>

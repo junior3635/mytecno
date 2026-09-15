@@ -2,18 +2,20 @@
 
 import { useState } from 'react';
 import type { ProviderId } from '@/lib/ai/types';
-import { AI_PROVIDERS, PROVIDER_DEFAULT_ENV_KEY, PROVIDER_DEFAULT_TEXT_MODELS, PROVIDER_MODELS } from '@/lib/ai/models';
+import { AI_PROVIDERS, PROVIDER_DEFAULT_ENV_KEY, PROVIDER_DEFAULT_TEXT_MODELS, PROVIDER_MODELS, IMAGE_PROVIDER_OPTIONS, IMAGE_STYLES } from '@/lib/ai/models';
 
 type Settings = {
   siteName?: string | null;
   siteUrl?: string | null;
-  adsenseClientId?: string | null;
-  amazonTag?: string | null;
   geminiApiKey?: string | null;
   anthropicApiKey?: string | null;
   openaiApiKey?: string | null;
   aiProvider?: string | null;
   aiModel?: string | null;
+  imageProvider?: string | null;
+  imageModel?: string | null;
+  imageStyle?: string | null;
+  imageFallback?: string | null;
   autoPublish?: boolean | null;
 };
 
@@ -66,17 +68,43 @@ function Input({ name, value, placeholder, type = 'text', onChange }: { name: st
   );
 }
 
+function ImageModelSelect({ providerId, value, onChange }: { providerId: ProviderId; value: string; onChange: (v: string) => void }) {
+  const imageModels = PROVIDER_MODELS[providerId].filter((m) => m.kind === 'image');
+  const providerLabel = AI_PROVIDERS.find((p) => p.id === providerId)?.label ?? providerId;
+  return (
+    <select
+      name="imageModel"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="admin-input"
+    >
+      {imageModels.length === 0 ? (
+        <option value="">No image models for {providerLabel}</option>
+      ) : (
+        <>
+          <option value="">Auto (provider default)</option>
+          {imageModels.map((m) => (
+            <option key={m.id} value={m.id}>{m.label}</option>
+          ))}
+        </>
+      )}
+    </select>
+  );
+}
+
 export default function SettingsForm({ settings }: { settings: Settings | null }) {
   const [form, setForm] = useState<Settings>({
     siteName: settings?.siteName ?? 'MyTechNews',
     siteUrl: settings?.siteUrl ?? '',
-    adsenseClientId: settings?.adsenseClientId ?? '',
-    amazonTag: settings?.amazonTag ?? '',
     geminiApiKey: settings?.geminiApiKey ?? '',
     anthropicApiKey: settings?.anthropicApiKey ?? '',
     openaiApiKey: settings?.openaiApiKey ?? '',
     aiProvider: settings?.aiProvider ?? 'gemini',
     aiModel: settings?.aiModel ?? 'gemini-3.6-flash',
+    imageProvider: settings?.imageProvider ?? 'auto',
+    imageModel: settings?.imageModel ?? '',
+    imageStyle: settings?.imageStyle ?? 'editorial',
+    imageFallback: settings?.imageFallback ?? 'placeholder',
     autoPublish: settings?.autoPublish ?? false,
   });
   const [saving, setSaving] = useState(false);
@@ -98,6 +126,20 @@ export default function SettingsForm({ settings }: { settings: Settings | null }
     const modelsFor = PROVIDER_MODELS[next].filter((m) => m.kind === 'text');
     if (!modelsFor.some((m) => m.id === form.aiModel)) {
       set('aiModel', PROVIDER_DEFAULT_TEXT_MODELS[next]);
+    }
+  }
+
+  function handleImageProviderChange(id: string) {
+    set('imageProvider', id);
+    // Reset the image model to the new provider's default when it doesn't fit.
+    if (id === 'auto' || id === 'stock' || id === 'none') {
+      set('imageModel', '');
+      return;
+    }
+    const nextProvider = (id === 'openai' || id === 'gemini' ? id : 'gemini') as ProviderId;
+    const imageModels = PROVIDER_MODELS[nextProvider].filter((m) => m.kind === 'image');
+    if (!imageModels.some((m) => m.id === form.imageModel)) {
+      set('imageModel', imageModels[0]?.id ?? '');
     }
   }
 
@@ -132,22 +174,6 @@ export default function SettingsForm({ settings }: { settings: Settings | null }
         </SettingRow>
         <SettingRow label="Site URL" description="Your canonical domain (used for SEO and sitemaps).">
           <Input name="siteUrl" value={form.siteUrl} placeholder="https://mytechnews.com" onChange={(e) => set('siteUrl', e.target.value)} />
-        </SettingRow>
-      </Section>
-
-      {/* Monetization */}
-      <Section title="Monetization">
-        <SettingRow
-          label="Google AdSense Client ID"
-          description="Your ca-pub-XXXX ID from your AdSense account."
-        >
-          <Input name="adsenseClientId" value={form.adsenseClientId} placeholder="ca-pub-XXXXXXXXXXXXXXXX" onChange={(e) => set('adsenseClientId', e.target.value)} />
-        </SettingRow>
-        <SettingRow
-          label="Amazon Associates Tag"
-          description="Your Amazon affiliate tag for automated product links."
-        >
-          <Input name="amazonTag" value={form.amazonTag} placeholder="yoursite-20" onChange={(e) => set('amazonTag', e.target.value)} />
         </SettingRow>
       </Section>
 
@@ -196,14 +222,58 @@ export default function SettingsForm({ settings }: { settings: Settings | null }
           </select>
         </SettingRow>
         <SettingRow
-          label="Image Generation"
-          description={providerMeta?.description ?? ''}
+          label="Image Provider"
+          description="Where article + featured images are generated. 'Auto' tries the provider above, then falls back to stock."
         >
-          <span style={{ fontSize: '0.8rem', color: '#71717a' }}>
-            {PROVIDER_MODELS[providerId].some((m) => m.kind === 'image')
-              ? 'Enabled automatically with the provider above.'
-              : 'Not available for this provider — articles use a styled placeholder instead.'}
-          </span>
+          <select
+            name="imageProvider"
+            value={form.imageProvider ?? 'auto'}
+            onChange={(e) => handleImageProviderChange(e.target.value)}
+            className="admin-input"
+          >
+            {IMAGE_PROVIDER_OPTIONS.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+        </SettingRow>
+        <SettingRow
+          label="Image Model"
+          description="The image model used (only for providers that support image generation)."
+        >
+          <ImageModelSelect
+            providerId={providerId}
+            value={form.imageModel ?? ''}
+            onChange={(v) => set('imageModel', v)}
+          />
+        </SettingRow>
+        <SettingRow
+          label="Image Style"
+          description="Visual direction shared by every generated image."
+        >
+          <select
+            name="imageStyle"
+            value={form.imageStyle ?? 'editorial'}
+            onChange={(e) => set('imageStyle', e.target.value)}
+            className="admin-input"
+          >
+            {IMAGE_STYLES.map((s) => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+        </SettingRow>
+        <SettingRow
+          label="Fallback"
+          description="What to use when no AI image is available."
+        >
+          <select
+            name="imageFallback"
+            value={form.imageFallback ?? 'placeholder'}
+            onChange={(e) => set('imageFallback', e.target.value)}
+            className="admin-input"
+          >
+            <option value="placeholder">Styled placeholder</option>
+            <option value="stock">Stock photos (categorized)</option>
+          </select>
         </SettingRow>
         <SettingRow
           label="Auto-Publish"

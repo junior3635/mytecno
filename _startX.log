@@ -1,0 +1,7 @@
+npm notice run mytecno@0.1.0 start
+npm notice run next start
+▲ Next.js 16.3.4
+- Local:         http://localhost:3000
+- Network:       http://172.16.30.217:3000
+✓ Ready in 112ms
+✓ Running next.config.ts took 28ms

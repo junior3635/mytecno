@@ -109,3 +109,118 @@ export function parseArticlePayload(text: string): ArticlePayload {
 
   return parsed ?? { html: text, images: [] };
 }
+
+// ---------------------------------------------------------------------------
+// Stored image metadata (image pipeline)
+// ---------------------------------------------------------------------------
+
+export const PENDING_IMAGE_SRC = '/pending-image.svg';
+
+export type ImageStatus = 'pending' | 'done' | 'error';
+
+export type StoredImageMeta = {
+  imageId: string;
+  prompt: string;
+  alt?: string;
+  caption?: string;
+  section?: string;
+  purpose?: string;
+  status: ImageStatus;
+  url: string | null;
+  kind?: 'ai' | 'stock' | 'placeholder';
+};
+
+export function serializeImageMeta(list: StoredImageMeta[]): string | null {
+  const clean = list.filter(
+    (m) => typeof m === 'object' && typeof m.imageId === 'string' && m.imageId.length > 0
+  );
+  return clean.length > 0 ? JSON.stringify(clean) : null;
+}
+
+export function parseImageMeta(json: string | null | undefined): StoredImageMeta[] {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (m): m is StoredImageMeta =>
+          !!m && typeof m.imageId === 'string' && typeof m.prompt === 'string'
+      )
+      .map((m) => ({
+        imageId: m.imageId,
+        prompt: m.prompt,
+        alt: typeof m.alt === 'string' ? m.alt : '',
+        caption: typeof m.caption === 'string' ? m.caption : '',
+        section: typeof m.section === 'string' ? m.section : '',
+        purpose: typeof m.purpose === 'string' ? m.purpose : '',
+        status: m.status === 'error' ? 'error' : m.status === 'done' ? 'done' : 'pending',
+        url: typeof m.url === 'string' ? m.url : null,
+        kind: m.kind === 'ai' || m.kind === 'stock' ? m.kind : 'placeholder',
+      }));
+  } catch {
+    return [];
+  }
+}
+
+export function buildImageMetaFromImages(images: ImageMeta[]): StoredImageMeta[] {
+  return images.map((img) => ({
+    imageId: img.image_id,
+    prompt: img.prompt,
+    alt: img.alt ?? '',
+    caption: img.caption ?? '',
+    section: img.section ?? '',
+    purpose: img.purpose ?? '',
+    status: 'pending',
+    url: null,
+    kind: 'ai',
+  }));
+}
+
+// Flags every <img> in the content whose src is not already a local /uploads file,
+// so freshly generated articles show a branded placeholder until images regenerate.
+export function setPendingPlaceholderSrc(html: string, pendingSrc = PENDING_IMAGE_SRC): string {
+  return html.replace(/<img\b[^>]*\bsrc="[^"]*"[^>]*>/gi, (tag) => {
+    const src = /src="([^"]*)"/.exec(tag)?.[1] ?? '';
+    if (src.startsWith('/uploads/')) return tag;
+    return tag.replace(/\bsrc="[^"]*"/, `src="${pendingSrc}"`);
+  });
+}
+
+// Builds image metadata for legacy articles that predate the pipeline, so the
+// editor can still regenerate images (prompts fall back to the section context).
+export function scanContentImages(html: string, featuredImage: string | null): StoredImageMeta[] {
+  const images: StoredImageMeta[] = [];
+  if (featuredImage) {
+    images.push({
+      imageId: 'hero',
+      prompt: '',
+      section: 'Featured image',
+      purpose: 'Featured image of the article',
+      alt: '',
+      caption: '',
+      status: 'done',
+      url: featuredImage,
+      kind: 'ai',
+    });
+  }
+  let index = 0;
+  const re = /<img\b[^>]*\bsrc="([^"]*)"[^>]*>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(html)) !== null) {
+    index += 1;
+    const src = match[1];
+    images.push({
+      imageId: `image-${index}`,
+      prompt: '',
+      section: '',
+      purpose: 'Article illustration',
+      alt: /alt="([^"]*)"/.exec(match[0])?.[1] ?? '',
+      caption: '',
+      status: src.startsWith('/uploads/') && src !== PENDING_IMAGE_SRC ? 'done' : 'pending',
+      url: src.startsWith('/uploads/') && src !== PENDING_IMAGE_SRC ? src : null,
+      kind: 'ai',
+    });
+  }
+  return images;
+}

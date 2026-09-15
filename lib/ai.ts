@@ -9,7 +9,7 @@ export type { Provider, ProviderId } from '@/lib/ai/types';
 
 const DEFAULTS: AiSettings = {
   aiProvider: 'gemini',
-  aiModel: 'gemini-3.6-flash',
+  aiModel: 'gemini-3.5-flash',
   geminiApiKey: undefined,
   anthropicApiKey: undefined,
   openaiApiKey: undefined,
@@ -40,7 +40,7 @@ function resolveProvider(settings: AiSettings, modelSpec?: string | null): { pro
   return { provider, model };
 }
 
-async function resolveApiKey(provider: Provider): Promise<string> {
+export async function resolveProviderApiKey(provider: Provider): Promise<string> {
   const settings = await getSettings();
   const dbKey = settings[provider.dbKeyField];
   const key = dbKey || process.env[provider.envKey];
@@ -50,6 +50,10 @@ async function resolveApiKey(provider: Provider): Promise<string> {
     );
   }
   return key;
+}
+
+async function resolveApiKey(provider: Provider): Promise<string> {
+  return resolveProviderApiKey(provider);
 }
 
 export function classifyError(error: unknown, providerId: ProviderId = 'gemini'): Error {
@@ -145,6 +149,25 @@ export async function generateImage(prompt: string): Promise<string> {
     console.warn('Image generation failed, using fallback:', error);
     return placeholderImage();
   }
+}
+
+// Generates an image through an explicit provider (used by the decoupled image pipeline).
+export async function generateImageWith(
+  prompt: string,
+  opts: { providerId: ProviderId; model?: string }
+): Promise<string> {
+  const provider = PROVIDERS[opts.providerId];
+  const providerId = opts.providerId as ProviderId;
+  if (!provider.generateImage) {
+    throw new Error(`${PROVIDER_LABELS[providerId]} does not support image generation`);
+  }
+  const apiKey = await resolveProviderApiKey(provider);
+  return provider.generateImage({ apiKey, prompt, model: opts.model });
+}
+
+export async function hasProviderApiKey(provider: Provider): Promise<boolean> {
+  const settings = await getSettings();
+  return Boolean(settings[provider.dbKeyField] || process.env[provider.envKey]);
 }
 
 export async function generateArticleImage(topic: string, title: string): Promise<string> {

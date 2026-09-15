@@ -31,11 +31,11 @@ export default function SubscribeForm() {
   }
 
   return (
-    <form onSubmit={submit} aria-label="Subscribe to newsletter">
+    <form onSubmit={submit} className="subscribe-form" aria-label="Subscribe to newsletter">
       {status === 'success' ? (
-        <p style={{ fontSize: '0.875rem', color: 'var(--neon-cyan)', fontWeight: 600 }}>✓ {message}</p>
+        <p className="subscribe-form__success">✓ {message}</p>
       ) : (
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="subscribe-form__row">
           <input
             type="email"
             value={email}
@@ -43,38 +43,14 @@ export default function SubscribeForm() {
             placeholder="you@example.com"
             required
             aria-label="Email address"
-            style={{
-              padding: '0.6rem 0.9rem',
-              borderRadius: '9999px',
-              border: '1px solid var(--border-color)',
-              background: 'transparent',
-              color: 'var(--text-primary)',
-              fontSize: '0.875rem',
-              outline: 'none',
-              minWidth: '200px',
-            }}
+            className="subscribe-input"
           />
-          <button
-            type="submit"
-            disabled={status === 'pending'}
-            style={{
-              padding: '0.6rem 1.4rem',
-              borderRadius: '9999px',
-              border: 'none',
-              background: 'var(--accent-color)',
-              color: 'var(--accent-text)',
-              fontWeight: 800,
-              fontSize: '0.825rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              cursor: status === 'pending' ? 'not-allowed' : 'pointer',
-            }}
-          >
+          <button type="submit" disabled={status === 'pending'} className="subscribe-btn">
             {status === 'pending' ? 'Subscribing…' : 'Subscribe'}
           </button>
         </div>
       )}
-      {status === 'error' && <p style={{ fontSize: '0.825rem', color: 'var(--neon-magenta)', marginTop: '0.5rem' }}>{message}</p>}
+      {status === 'error' && <p className="subscribe-form__error">{message}</p>}
     </form>
   );
 }

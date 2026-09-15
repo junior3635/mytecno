@@ -3,82 +3,69 @@ import { Suspense } from 'react';
 import prisma from '@/lib/db';
 import ThemeToggle from './theme-toggle';
 import SearchBox from './search-box';
+import MobileNav from '@/components/mobile-nav';
 
 type HeaderCategory = { name: string; slug: string };
 
 export default async function Header() {
-  let categories: HeaderCategory[] = await prisma.category.findMany({
-    orderBy: { name: 'asc' },
-    take: 6,
-  }).catch(() => []);
+  let categories: HeaderCategory[] = await prisma.category
+    .findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }], take: 8 })
+    .catch(() => []);
 
   if (categories.length === 0) {
     categories = [
-      { name: 'Reviews', slug: 'reviews' },
+      { name: 'Technology', slug: 'technology' },
+      { name: 'Food', slug: 'food' },
+      { name: 'News', slug: 'news' },
       { name: 'Guides', slug: 'guides' },
-      { name: 'Deep Dives', slug: 'deep-dives' },
-      { name: 'Gadgets', slug: 'gadgets' },
+      { name: 'Reviews', slug: 'reviews' },
     ];
   }
 
+  const navLinks = [{ name: 'Home', slug: '' }, ...categories.slice(0, 6)];
+
   return (
-    <header
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        backgroundColor: 'rgba(0,0,0,0.75)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--border-color)',
-      }}
-    >
-      <div className="container" style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{
-            fontSize: '1.5rem',
-            fontWeight: 900,
-            letterSpacing: '-0.05em',
-            textTransform: 'uppercase',
-            background: 'linear-gradient(90deg, #fff 30%, #00f2fe)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
-            MyTechNews
-          </span>
+    <header className="site-header">
+      <div className="container header-inner">
+        {/* Masthead */}
+        <Link href="/" className="header-logo" aria-label="MyTechNews home">
+          MyTechNews
         </Link>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-          {categories.map(({ name, slug }) => (
-            <Link key={slug} href={`/?category=${encodeURIComponent(slug)}`} style={{
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: 'var(--text-secondary)',
-              transition: 'color 0.2s',
-            }}>
+        {/* Desktop nav */}
+        <nav className="header-desktop-nav" aria-label="Main navigation">
+          {navLinks.map(({ name, slug }) => (
+            <Link
+              key={slug || '__home'}
+              href={slug ? `/${encodeURIComponent(slug)}` : '/'}
+              className="header-nav-link"
+            >
               {name}
             </Link>
           ))}
+        </nav>
+
+        {/* Desktop actions */}
+        <div className="header-desktop-actions">
           <Suspense fallback={null}>
             <SearchBox />
           </Suspense>
-          <Link href="/admin" style={{
-            fontSize: '0.85rem',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            padding: '0.4rem 1.2rem',
-            borderRadius: '9999px',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-primary)',
-            transition: 'all 0.2s',
-          }}>
-            Admin
+          <Link href="/saved" className="header-admin-link">
+            Saved
           </Link>
           <ThemeToggle />
-        </nav>
+        </div>
+
+        {/* Mobile: hamburger + overlay */}
+        <MobileNav
+          categories={navLinks.filter((l) => l.slug !== '')}
+          searchSlot={
+            <Suspense fallback={null}>
+              <SearchBox />
+            </Suspense>
+          }
+          themeSlot={<ThemeToggle />}
+        />
       </div>
     </header>
   );

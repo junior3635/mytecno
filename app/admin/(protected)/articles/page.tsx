@@ -1,4 +1,5 @@
 import prisma from '@/lib/db';
+import Link from 'next/link';
 import type { Prisma } from '@prisma/client';
 import ArticleActions from './article-actions';
 import AdminSearchBox from './admin-search-box';
@@ -43,9 +44,9 @@ export default async function ArticlesPage({ searchParams }: { searchParams: Pro
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <AdminSearchBox placeholder="Search articles…" />
-          <a href="/admin/generator" className="admin-primary-btn" style={{ padding: '0.75rem 1.5rem', fontSize: '0.8rem' }}>
+          <Link href="/admin/generator" className="admin-primary-btn" style={{ padding: '0.75rem 1.5rem', fontSize: '0.8rem' }}>
             ✦ New Article
-          </a>
+          </Link>
         </div>
       </div>
 

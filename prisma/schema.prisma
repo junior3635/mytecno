@@ -19,6 +19,7 @@ model Category {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  sortOrder Int      @default(0)
   articles  Article[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -34,8 +35,17 @@ model Article {
   categoryRef  Category?    @relation(fields: [categorySlug], references: [slug])
   seoTitle     String?
   seoDesc      String?
-  featuredImage String? // base64 data URL from Imagen 3
+  featuredImage String? // public /uploads path of the featured image
+  imageMeta    String? // JSON array of StoredImageMeta entries (in-article + hero) for the image pipeline
   isPublished  Boolean  @default(false)
+  views        Int      @default(0)
+  recipePrepMin      Int?
+  recipeCookMin      Int?
+  recipeServings     Int?
+  recipeDifficulty   String?
+  recipeCalories     Int?
+  recipeIngredients  String? // JSON array of strings
+  recipeInstructions String? // JSON array of strings
   comments     Comment[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -64,11 +74,35 @@ model Subscriber {
   updatedAt DateTime  @updatedAt
 }
 
+model PageView {
+  id          String @id @default(cuid())
+  date        String // YYYY-MM-DD (server local time)
+  articleSlug String
+  views       Int    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([date, articleSlug])
+  @@index([date])
+}
+
 model SiteSettings {
   id               String   @id @default("global")
   siteName         String   @default("MyTechNews")
   siteUrl          String?
   adsenseClientId  String?
+  adsenseAdSlot    String?
+  adsenseAutoAds   Boolean  @default(true)
+  adsenseManualUnits Boolean @default(false)
+  adsenseOnHome    Boolean  @default(true)
+  adsenseOnArticles Boolean @default(true)
+  socialX          String?
+  socialFacebook   String?
+  socialInstagram  String?
+  socialYoutube    String?
+  socialTiktok     String?
+  socialLinkedin   String?
+  socialShowFooter Boolean  @default(true)
   amazonTag        String?
   geminiApiKey     String?
   anthropicApiKey  String?
@@ -76,6 +110,10 @@ model SiteSettings {
   aiProvider       String   @default("gemini")
   aiModel          String   @default("gemini-3.6-flash")
   autoPublish      Boolean  @default(false)
+  imageProvider    String   @default("auto")
+  imageModel       String?
+  imageStyle       String   @default("editorial")
+  imageFallback    String   @default("placeholder") // placeholder | stock
   updatedAt        DateTime @updatedAt
 }
 

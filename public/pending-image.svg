@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Image pending generation">
+  <defs>
+    <linearGradient id="pendingBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="55%" stop-color="#0a0a1a"/>
+      <stop offset="100%" stop-color="#001818"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#pendingBg)"/>
+  <circle cx="1075" cy="95" r="205" fill="#00f2fe" opacity="0.05"/>
+  <circle cx="120" cy="560" r="160" fill="#fe0979" opacity="0.05"/>
+  <g transform="translate(600 296)">
+    <rect x="-64" y="-56" width="128" height="98" rx="14" fill="#001a1a" stroke="#00f2fe" stroke-opacity="0.45" stroke-width="1.5" transform="rotate(-7)"/>
+    <rect x="-56" y="-46" width="112" height="82" rx="12" fill="#000" stroke="#fe0979" stroke-opacity="0.5" stroke-width="1.5" transform="rotate(6)"/>
+    <text x="0" y="-6" text-anchor="middle" font-family="Space Grotesk, system-ui, sans-serif" font-size="30" font-weight="700" fill="#00f2fe" letter-spacing="0.22em">MYTEC</text>
+    <text x="0" y="26" text-anchor="middle" font-family="Space Grotesk, system-ui, sans-serif" font-size="13" font-weight="500" fill="#a1a1aa" letter-spacing="0.34em">IMAGE PENDING</text>
+  </g>
+  <circle cx="600" cy="434" r="5" fill="#00f2fe" opacity="0.6">
+    <animate attributeName="opacity" values="0.1;1;0.1" dur="1.8s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="600" cy="434" r="14" fill="none" stroke="#fe0979" stroke-opacity="0.7" stroke-width="1.5">
+    <animate attributeName="r" values="6;22" dur="1.8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.8;0" dur="1.8s" repeatCount="indefinite"/>
+  </circle>
+</svg>

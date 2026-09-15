@@ -33,7 +33,9 @@ export default function EditArticleForm({ article }: { article: ArticleDraft }) 
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<string | null>(null);
-
+  const [imagesPanelOpen, setImagesPanelOpen] = useState(false);
+  const [imgBusy, setImgBusy] = useState(false);
+  const [imgNotice, setImgNotice] = useState<string | null>(null);
   const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(savedSnapshot), [form, savedSnapshot]);
   const sanitizedHtml = useMemo(
     () => DOMPurify.sanitize(form.content || ''),
@@ -98,6 +100,31 @@ export default function EditArticleForm({ article }: { article: ArticleDraft }) 
       setStatus('error');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleRegenerateImages(only?: string[], includeHero?: boolean) {
+    setImgBusy(true);
+    setImgNotice(null);
+    try {
+      const res = await fetch(`/api/articles/${form.id}/images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ only, includeHero }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setImgNotice(data.error || 'Failed to regenerate images');
+        return;
+      }
+      if (typeof data.content === 'string') set('content', data.content);
+      if (typeof data.featuredImage === 'string') set('featuredImage', data.featuredImage);
+      setImgNotice(data.generated > 0 ? `Generated ${data.generated} image${data.generated === 1 ? '' : 's'}.` : 'All images already generated.');
+    } catch {
+      setImgNotice('Failed to regenerate images: network error');
+    } finally {
+      setImgBusy(false);
+      router.refresh();
     }
   }
 

@@ -44,6 +44,17 @@ export default async function EditArticlePage({ params }: Props) {
         seoDesc: article.seoDesc || '',
         featuredImage: article.featuredImage || '',
         isPublished: article.isPublished,
+        recipePrepMin: article.recipePrepMin,
+        recipeCookMin: article.recipeCookMin,
+        recipeServings: article.recipeServings,
+        recipeDifficulty: article.recipeDifficulty || '',
+        recipeCalories: article.recipeCalories,
+        recipeIngredients: (() => {
+          try { return article.recipeIngredients ? JSON.parse(article.recipeIngredients) : []; } catch { return []; }
+        })(),
+        recipeInstructions: (() => {
+          try { return article.recipeInstructions ? JSON.parse(article.recipeInstructions) : []; } catch { return []; }
+        })(),
       }} />
     </div>
   );

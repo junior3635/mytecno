@@ -25,16 +25,22 @@ async function main() {
   }
 
   const defaultCategories = [
-    { name: 'Technology', slug: 'technology' },
-    { name: 'Reviews', slug: 'reviews' },
-    { name: 'Guides', slug: 'guides' },
-    { name: 'Deep Dives', slug: 'deep-dives' },
-    { name: 'Gadgets', slug: 'gadgets' },
+    { name: 'Technology', slug: 'technology', sortOrder: 10 },
+    { name: 'Food', slug: 'food', sortOrder: 20 },
+    { name: 'News', slug: 'news', sortOrder: 30 },
+    { name: 'Guides', slug: 'guides', sortOrder: 40 },
+    { name: 'Reviews', slug: 'reviews', sortOrder: 50 },
+    { name: 'Trends', slug: 'trends', sortOrder: 60 },
+    { name: 'Gadgets', slug: 'gadgets', sortOrder: 70 },
+    { name: 'Deep Dives', slug: 'deep-dives', sortOrder: 80 },
   ];
 
   for (const cat of defaultCategories) {
-    const exists = await prisma.category.findUnique({ where: { slug: cat.slug } });
-    if (!exists) {
+    const existing = await prisma.category.findUnique({ where: { slug: cat.slug } });
+    if (existing) {
+      await prisma.category.update({ where: { slug: cat.slug }, data: { name: cat.name, sortOrder: cat.sortOrder } });
+      console.log(`Updated category: ${cat.name}`);
+    } else {
       await prisma.category.create({ data: cat });
       console.log(`Created category: ${cat.name}`);
     }

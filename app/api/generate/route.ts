@@ -1,15 +1,21 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { generateTechArticle, generateArticleMetadata, generateArticleImage, generateImage } from '@/lib/ai';
-import { saveImageFromDataUrl } from '@/lib/images';
-import { parseArticlePayload, replaceImageSources } from '@/lib/article-content';
+import { generateTechArticle, generateArticleMetadata } from '@/lib/ai';
+import { buildArticleImagePrompt } from '@/lib/ai/prompts';
+import {
+  parseArticlePayload,
+  buildImageMetaFromImages,
+  serializeImageMeta,
+  setPendingPlaceholderSrc,
+  type StoredImageMeta,
+} from '@/lib/article-content';
 import { log } from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { submitJob } from '@/lib/generation-queue';
 import prisma from '@/lib/db';
 import { getSession } from '@/lib/session';
 
-const RATE_LIMIT_PER_HOUR = 5;
+const RATE_LIMIT_PER_HOUR = 50;
 
 export async function POST(req: Request) {
   try {
@@ -58,10 +64,10 @@ export async function POST(req: Request) {
 
       // 2. Generate Article Content + structured image metadata (JSON payload)
       const contentRaw = await generateTechArticle(topic, aiModel) || '';
-      const { html: content, images: articleImages } = parseArticlePayload(contentRaw);
+      const { html: rawContent, images: articleImages } = parseArticlePayload(contentRaw);
 
       // 3. Generate Metadata
-      const metadata = await generateArticleMetadata(topic, content, aiModel);
+      const metadata = await generateArticleMetadata(topic, rawContent, aiModel);
 
       const title = metadata.title || 'Untitled';
 
@@ -82,38 +88,38 @@ export async function POST(req: Request) {
 
       const slug = await generateUniqueSlug(title);
 
-      // 4. Generate every in-article image from its structured image metadata.
-      //    Each image has a defined section, purpose, and prompt, so the result is
-      //    far more relevant than generating from the topic alone.
-      let finalContent = content;
+      // 4. Build image metadata — the pipeline runs object images (hero, in-body)
+      //    in a SEPARATE step via POST /api/articles/[id]/images, never inside
+      //    this article-generation prompt/call. In-body <img> srcs are pointed at
+      //    a branded placeholder until their images are generated.
+      const inBodyMetas = buildImageMetaFromImages(articleImages);
+      const heroMetaData: StoredImageMeta = {
+        imageId: 'hero',
+        prompt: buildArticleImagePrompt(topic, title),
+        section: 'Featured image',
+        purpose: 'Featured image of the article',
+        alt: title,
+        caption: '',
+        status: 'pending',
+        url: null,
+        kind: 'ai',
+      };
+      const imageMeta: StoredImageMeta[] = [heroMetaData, ...inBodyMetas];
+      const content = setPendingPlaceholderSrc(rawContent);
 
-      if (articleImages.length > 0) {
-        const urls = await Promise.all(
-          articleImages.map(async ({ prompt }, idx) => {
-            const dataUrl = await generateImage(prompt);
-            const suffix = `${slug}-${idx + 1}`;
-            return saveImageFromDataUrl(dataUrl, suffix);
-          })
-        );
-        finalContent = replaceImageSources(finalContent, urls);
-        log('info', 'generate_article', 'In-article images generated', { count: urls.length, slug });
-      }
-
-      // 5. Generate Featured Image and save it to public/uploads (avoids base64 blobs in SQLite)
-      const heroDataUrl = await generateArticleImage(topic, title);
-      const featuredImage = saveImageFromDataUrl(heroDataUrl, slug);
-
-      // 6. Save to Database (publish only if autoPublish is enabled)
+      // 5. Save to Database (publish only if autoPublish is enabled).
+      //    featuredImage is generated in the image pipeline, so it starts null.
       const article = await prisma.article.create({
         data: {
           title,
           slug,
-          content: finalContent,
+          content,
           category: categoryName,
           categorySlug: categorySlugResolved,
           seoTitle: title,
           seoDesc: metadata.description || '',
-          featuredImage,
+          featuredImage: null,
+          imageMeta: serializeImageMeta(imageMeta),
           isPublished: settings?.autoPublish ?? false,
         },
       });
@@ -121,7 +127,7 @@ export async function POST(req: Request) {
       await prisma.log.create({
         data: {
           action: 'generate_article',
-          message: `Successfully generated article with image: ${title}`,
+          message: `Successfully generated article draft: ${title}`,
           success: true,
         },
       });

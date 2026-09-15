@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/db';
 import type { Prisma } from '@prisma/client';
+import DOMPurify from 'isomorphic-dompurify';
 import { getSession } from '@/lib/session';
 
 type Params = { params: Promise<{ id: string }> };
@@ -30,11 +31,28 @@ export async function PUT(req: Request, { params }: Params) {
   const data: Prisma.ArticleUpdateInput = {
     ...(typeof body.title === 'string' && body.title.trim() && { title: body.title.trim() }),
     ...(slug && { slug }),
-    ...(typeof body.content === 'string' && { content: body.content }),
+    ...(typeof body.content === 'string' && {
+      content: DOMPurify.sanitize(body.content, { ADD_ATTR: ['loading'] }),
+    }),
     ...(typeof body.seoTitle === 'string' && { seoTitle: body.seoTitle }),
     ...(typeof body.seoDesc === 'string' && { seoDesc: body.seoDesc }),
     ...(typeof body.isPublished === 'boolean' && { isPublished: body.isPublished }),
     ...(typeof body.featuredImage === 'string' && { featuredImage: body.featuredImage.trim() || null }),
+    ...(typeof body.recipePrepMin === 'number' && { recipePrepMin: body.recipePrepMin || null }),
+    ...(typeof body.recipeCookMin === 'number' && { recipeCookMin: body.recipeCookMin || null }),
+    ...(typeof body.recipeServings === 'number' && { recipeServings: body.recipeServings || null }),
+    ...(typeof body.recipeDifficulty === 'string' && { recipeDifficulty: body.recipeDifficulty.trim() || null }),
+    ...(typeof body.recipeCalories === 'number' && { recipeCalories: body.recipeCalories || null }),
+    ...(Array.isArray(body.recipeIngredients) && {
+      recipeIngredients: body.recipeIngredients.length
+        ? JSON.stringify(body.recipeIngredients)
+        : null,
+    }),
+    ...(Array.isArray(body.recipeInstructions) && {
+      recipeInstructions: body.recipeInstructions.length
+        ? JSON.stringify(body.recipeInstructions)
+        : null,
+    }),
   };
 
   if (typeof body.category === 'string' && body.category.trim()) {
