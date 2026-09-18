@@ -15,6 +15,8 @@ type ArticleDraft = {
   seoDesc: string;
   featuredImage: string;
   isPublished: boolean;
+  recipePrepMin: number | null;
+  recipeCookMin: number | null;
 };
 
 const TITLE_MAX = 60;

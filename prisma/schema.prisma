@@ -6,8 +6,17 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+enum UserRole {
+  ADMIN
+  EDITOR
+  AUTHOR
+  VIEWER
+  WRITER
+}
+
 
 model User {
+  role     UserRole @default(ADMIN)
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
@@ -38,6 +47,8 @@ model Article {
   featuredImage String? // public /uploads path of the featured image
   imageMeta    String? // JSON array of StoredImageMeta entries (in-article + hero) for the image pipeline
   isPublished  Boolean  @default(false)
+  publishAt    DateTime?
+  publishedAt  DateTime?
   views        Int      @default(0)
   recipePrepMin      Int?
   recipeCookMin      Int?
@@ -123,4 +134,14 @@ model Log {
   message   String
   success   Boolean
   createdAt DateTime @default(now())
+}
+
+model GenerationMetric {
+  id         String   @id @default(cuid())
+  mode       String
+  source     String?
+  latencyMs  Int      @default(0)
+  tokenCount Int      @default(0)
+  success    Boolean  @default(true)
+  createdAt  DateTime @default(now())
 }
